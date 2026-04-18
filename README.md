@@ -1,15 +1,15 @@
-# Push / Pull / Legs — Workout Tracker for Google Sheets
+# Push / Pull / Legs / Abs — Workout Tracker for Google Sheets
 
 A fully-featured gym workout tracker built with Google Apps Script. One-time setup, then use it every day at the gym straight from your phone or laptop.
 
 ## What it does
 
-- **Pre-fills your workout** from editable Push / Pull / Legs templates — just open the menu and tap Load
+- **Pre-fills your workout** from editable Push / Pull / Legs / Abs templates — just open the menu and tap Load
 - **Tracks weight, reps, and notes** per set, with auto-calculated estimated 1-rep max (Epley formula)
 - **Shows your strength progress** over time with a chart for any exercise
 - **All-time PR board** on the Dashboard — best weight and best estimated 1RM per exercise
 - **Add any exercise or machine** in seconds via the Workout menu; dropdowns update automatically
-- Color-coded by workout type (Push = red, Pull = teal, Legs = blue) for fast visual scanning
+- Color-coded by workout type (Push = red, Pull = teal, Legs = blue, Abs = purple) for fast visual scanning
 
 ---
 
@@ -33,7 +33,7 @@ A fully-featured gym workout tracker built with Google Apps Script. One-time set
 |---|---|
 | **Dashboard** | All-time PRs per exercise + recent workout history |
 | **Log** | Daily workout data entry — one row per set |
-| **Templates** | Default exercises and set counts for Push, Pull, and Legs — edit freely |
+| **Templates** | Default exercises and set counts for Push, Pull, Legs, and Abs — edit freely |
 | **Exercises** | Full exercise library with type, muscle group, and equipment |
 | **Progress** | Select any exercise to see a strength progress chart over time |
 
@@ -43,11 +43,13 @@ A fully-featured gym workout tracker built with Google Apps Script. One-time set
 
 ### Loading a workout
 1. Open your sheet
-2. Click **Workout → Load Push / Pull / Legs** from the top menu
+2. Click **Workout → Load Push / Pull / Legs / Abs** from the top menu
 3. Today's session is pre-filled in the **Log** sheet — one row per set, cursor lands on the Weight column
 4. Fill in **Weight (lbs)** and **Reps** as you complete each set
 5. **Est. 1RM** calculates automatically using the Epley formula: `weight × (1 + reps / 30)`
 6. Add anything to **Notes** (e.g. "paused reps", "felt easy", "left shoulder tight")
+
+> **Tip for abs:** For timed exercises like Plank, log the number of seconds in the Reps column and put 0 in Weight. The Est. 1RM will be blank, which is fine.
 
 ### Checking progress
 1. Go to the **Progress** tab
@@ -61,7 +63,7 @@ A fully-featured gym workout tracker built with Google Apps Script. One-time set
 
 **Option A — Menu prompt (recommended):**
 1. Click **Workout → Add Exercise / Machine**
-2. Follow the 4-step prompt: name → type (Push/Pull/Legs) → muscle group → equipment
+2. Follow the 4-step prompt: name → type (Push / Pull / Legs / Abs) → muscle group → equipment
 3. The exercise is added to the library and immediately available in all dropdowns
 
 **Option B — Edit the Exercises sheet directly:**
@@ -101,3 +103,5 @@ This lets you compare performance across different rep ranges. For example, 185 
 **Pull** — Deadlift, Barbell Row, Pull-ups, Lat Pulldown, Seated Cable Row, Face Pull, Barbell Curl, Dumbbell Curl, Hammer Curl, Shrugs, T-Bar Row
 
 **Legs** — Barbell Squat, Romanian Deadlift, Leg Press, Leg Curl, Leg Extension, Calf Raise, Bulgarian Split Squat, Hack Squat, Hip Thrust
+
+**Abs** — Plank, Leg Raises, Hanging Knee Raise, Cable Crunch, Ab Wheel Rollout, Russian Twist, Decline Sit-up, Crunch
