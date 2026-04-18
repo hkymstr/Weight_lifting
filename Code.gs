@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════
- *  PUSH / PULL / LEGS — Workout Tracker for Google Sheets
+ *  PUSH / PULL / LEGS / ABS — Workout Tracker for Google Sheets
  * ═══════════════════════════════════════════════════════
  *
  *  SETUP (one-time):
@@ -28,6 +28,7 @@ const CLR = {
   push:   '#FF8A80',
   pull:   '#80CBC4',
   legs:   '#81D4FA',
+  abs:    '#CE93D8',
   hdr:    '#263238',
   white:  '#FFFFFF',
   row2:   '#F5F5F5',
@@ -35,6 +36,9 @@ const CLR = {
   yellow: '#FFF9C4',
   light:  '#ECEFF1',
 };
+
+// Resolves a workout type string to its colour; falls back to grey.
+function _typeColor(type) { return CLR[type.toLowerCase()] || CLR.muted; }
 
 // ── Pre-loaded exercise library ───────────────────────
 // [Name, Type, Muscle Group, Equipment]
@@ -70,6 +74,14 @@ const EXERCISE_DATA = [
   ['Bulgarian Split Squat',    'Legs', 'Quads',          'Dumbbell'  ],
   ['Hack Squat',               'Legs', 'Quads',          'Machine'   ],
   ['Hip Thrust',               'Legs', 'Glutes',         'Barbell'   ],
+  ['Plank',                    'Abs',  'Core',           'Bodyweight'],
+  ['Leg Raises',               'Abs',  'Core',           'Bodyweight'],
+  ['Hanging Knee Raise',       'Abs',  'Core',           'Bodyweight'],
+  ['Cable Crunch',             'Abs',  'Core',           'Cable'     ],
+  ['Ab Wheel Rollout',         'Abs',  'Core',           'Bodyweight'],
+  ['Russian Twist',            'Abs',  'Core',           'Dumbbell'  ],
+  ['Decline Sit-up',           'Abs',  'Core',           'Bodyweight'],
+  ['Crunch',                   'Abs',  'Core',           'Bodyweight'],
 ];
 
 // ── Default workout templates ─────────────────────────
@@ -95,6 +107,13 @@ const TEMPLATES = {
     ['Leg Press',               3, '10-12'],
     ['Leg Curl',                3, '10-12'],
     ['Calf Raise',              4, '15-20'],
+  ],
+  Abs: [
+    ['Plank',                   3, '30-60s'],
+    ['Leg Raises',              3, '15-20' ],
+    ['Cable Crunch',            3, '12-15' ],
+    ['Ab Wheel Rollout',        3, '8-10'  ],
+    ['Russian Twist',           3, '20-30' ],
   ],
 };
 
@@ -135,6 +154,7 @@ function onOpen() {
     .addItem('Load Push Workout', 'loadPush')
     .addItem('Load Pull Workout', 'loadPull')
     .addItem('Load Legs Workout', 'loadLegs')
+    .addItem('Load Abs Workout',  'loadAbs')
     .addSeparator()
     .addItem('Add Exercise / Machine', 'addExercisePrompt')
     .addSeparator()
@@ -161,13 +181,13 @@ function _buildExercisesSheet(ss) {
     const r = i + 2;
     sh.getRange(r, 1, 1, 5).setBackground(i % 2 === 0 ? CLR.white : CLR.row2);
     sh.getRange(r, 2)
-      .setBackground(row[1] === 'Push' ? CLR.push : row[1] === 'Pull' ? CLR.pull : CLR.legs)
+      .setBackground(_typeColor(row[1]))
       .setFontWeight('bold').setHorizontalAlignment('center');
   });
 
   sh.getRange('B2:B1000').setDataValidation(
     SpreadsheetApp.newDataValidation()
-      .requireValueInList(['Push', 'Pull', 'Legs'], true)
+      .requireValueInList(['Push', 'Pull', 'Legs', 'Abs'], true)
       .setAllowInvalid(false).build()
   );
 
@@ -183,17 +203,17 @@ function _buildExercisesSheet(ss) {
 function _buildTemplatesSheet(ss) {
   const sh = ss.insertSheet('Templates');
 
-  sh.getRange('A1:I1').merge()
+  sh.getRange('A1:L1').merge()
     .setValue('Edit your default workout templates here. Changes take effect the next time you load a workout.')
     .setFontStyle('italic').setFontColor(CLR.muted).setBackground(CLR.light);
   sh.setRowHeight(1, 30);
 
-  const types     = ['Push', 'Pull', 'Legs'];
-  const startCols = [1, 4, 7]; // columns A, D, G
+  const types     = ['Push', 'Pull', 'Legs', 'Abs'];
+  const startCols = [1, 4, 7, 10]; // columns A, D, G, J
 
   types.forEach((type, ti) => {
     const sc    = startCols[ti];
-    const color = type === 'Push' ? CLR.push : type === 'Pull' ? CLR.pull : CLR.legs;
+    const color = _typeColor(type);
 
     sh.getRange(2, sc, 1, 3).merge()
       .setValue(type).setBackground(color)
@@ -232,7 +252,7 @@ function _buildLogSheet(ss) {
   // Workout type dropdown
   sh.getRange('B2:B2000').setDataValidation(
     SpreadsheetApp.newDataValidation()
-      .requireValueInList(['Push', 'Pull', 'Legs'], true)
+      .requireValueInList(['Push', 'Pull', 'Legs', 'Abs'], true)
       .setAllowInvalid(false).build()
   );
 
@@ -249,10 +269,10 @@ function _buildLogSheet(ss) {
   sh.getRange('G2:G2000').setFontColor(CLR.muted).setFontStyle('italic').setNumberFormat('0.0');
 
   // Conditional formatting: colour the Workout column by type
-  const cfRules = ['Push', 'Pull', 'Legs'].map((t, i) =>
+  const cfRules = ['Push', 'Pull', 'Legs', 'Abs'].map(t =>
     SpreadsheetApp.newConditionalFormatRule()
       .whenTextEqualTo(t)
-      .setBackground(i === 0 ? CLR.push : i === 1 ? CLR.pull : CLR.legs)
+      .setBackground(_typeColor(t))
       .setRanges([sh.getRange('B2:B2000')])
       .build()
   );
@@ -317,7 +337,7 @@ function _buildDashboardSheet(ss) {
 
   // Title banner
   sh.getRange('A1:G1').merge()
-    .setValue('WORKOUT TRACKER  \u00b7  Push / Pull / Legs')
+    .setValue('WORKOUT TRACKER  \u00b7  Push / Pull / Legs / Abs')
     .setFontSize(18).setFontWeight('bold').setFontColor(CLR.hdr)
     .setHorizontalAlignment('center').setBackground(CLR.light)
     .setVerticalAlignment('middle');
@@ -337,22 +357,27 @@ function _buildDashboardSheet(ss) {
       '=IFERROR(ROWS(QUERY(Log!A:B,"SELECT A WHERE B=\'Pull\' GROUP BY A LABEL A \'\'"))-1,0)'],
     ['Legs sessions',
       '=IFERROR(ROWS(QUERY(Log!A:B,"SELECT A WHERE B=\'Legs\' GROUP BY A LABEL A \'\'"))-1,0)'],
+    ['Abs sessions',
+      '=IFERROR(ROWS(QUERY(Log!A:B,"SELECT A WHERE B=\'Abs\' GROUP BY A LABEL A \'\'"))-1,0)'],
   ];
 
+  const statsStartRow = 4;
   stats.forEach(([label, formula], i) => {
-    sh.getRange(4 + i, 1).setValue(label).setFontColor(CLR.muted);
-    sh.getRange(4 + i, 2).setFormula(formula).setFontWeight('bold').setFontSize(13);
+    sh.getRange(statsStartRow + i, 1).setValue(label).setFontColor(CLR.muted);
+    sh.getRange(statsStartRow + i, 2).setFormula(formula).setFontWeight('bold').setFontSize(13);
   });
 
   // ── All-time PRs ─────────────────────────────────────
-  sh.getRange('A10').setValue('ALL-TIME PRs')
+  const prLabelRow = statsStartRow + stats.length + 1; // one blank row gap
+  sh.getRange(prLabelRow, 1).setValue('ALL-TIME PRs')
     .setFontWeight('bold').setFontColor(CLR.muted);
 
-  sh.getRange(11, 1, 1, 4)
+  sh.getRange(prLabelRow + 1, 1, 1, 4)
     .setValues([['Exercise', 'Best Weight', 'Best Est. 1RM', 'Date']])
     .setFontWeight('bold').setBackground(CLR.light).setHorizontalAlignment('center');
 
-  sh.getRange('A12').setFormula(
+  const prDataRow = prLabelRow + 2;
+  sh.getRange(prDataRow, 1).setFormula(
     '=IFERROR(' +
     'QUERY(Log!A:G,' +
     '"SELECT C, MAX(E), MAX(G), MAX(A) ' +
@@ -362,8 +387,8 @@ function _buildDashboardSheet(ss) {
     ',0),' +
     '{"No data yet"})'
   );
-  sh.getRange('A12:A200').setNumberFormat('@');
-  sh.getRange('D12:D200').setNumberFormat('MM/dd/yyyy');
+  sh.getRange(`A${prDataRow}:A200`).setNumberFormat('@');
+  sh.getRange(`D${prDataRow}:D200`).setNumberFormat('MM/dd/yyyy');
 
   // ── Recent workouts (right side) ─────────────────────
   sh.getRange('F3').setValue('RECENT WORKOUTS')
@@ -397,14 +422,15 @@ function _buildDashboardSheet(ss) {
 function loadPush() { _loadTemplate('Push'); }
 function loadPull() { _loadTemplate('Pull'); }
 function loadLegs() { _loadTemplate('Legs'); }
+function loadAbs()  { _loadTemplate('Abs');  }
 
 function _loadTemplate(type) {
   const ss  = SpreadsheetApp.getActiveSpreadsheet();
   const log = ss.getSheetByName('Log');
   const tpl = ss.getSheetByName('Templates');
 
-  const typeIdx  = ['Push', 'Pull', 'Legs'].indexOf(type);
-  const startCol = typeIdx * 3 + 1; // A=1, D=4, G=7
+  const typeIdx  = ['Push', 'Pull', 'Legs', 'Abs'].indexOf(type);
+  const startCol = typeIdx * 3 + 1; // A=1, D=4, G=7, J=10
 
   // Read template (up to 20 exercises)
   const data  = tpl.getRange(4, startCol, 20, 3).getValues();
@@ -424,7 +450,7 @@ function _loadTemplate(type) {
   }
 
   const firstRow = log.getLastRow() + 1;
-  const color    = type === 'Push' ? CLR.push : type === 'Pull' ? CLR.pull : CLR.legs;
+  const color    = _typeColor(type);
 
   // Write columns A-F and H (Notes), leaving G for the formula
   log.getRange(firstRow, 1, rows.length, 6).setValues(rows.map(r => r.slice(0, 6)));
@@ -468,10 +494,10 @@ function addExercisePrompt() {
   const name = r1.getResponseText().trim();
   if (!name) { ui.alert('Name cannot be empty.'); return; }
 
-  const r2 = ui.prompt('Add Exercise (2/4)', 'Type — Push, Pull, or Legs:', ui.ButtonSet.OK_CANCEL);
+  const r2 = ui.prompt('Add Exercise (2/4)', 'Type — Push, Pull, Legs, or Abs:', ui.ButtonSet.OK_CANCEL);
   if (r2.getSelectedButton() !== ui.Button.OK) return;
   const type = r2.getResponseText().trim();
-  if (!['Push', 'Pull', 'Legs'].includes(type)) { ui.alert('Must be Push, Pull, or Legs.'); return; }
+  if (!['Push', 'Pull', 'Legs', 'Abs'].includes(type)) { ui.alert('Must be Push, Pull, Legs, or Abs.'); return; }
 
   const r3 = ui.prompt('Add Exercise (3/4)', 'Muscle group (e.g. Chest, Quads, Back):', ui.ButtonSet.OK_CANCEL);
   if (r3.getSelectedButton() !== ui.Button.OK) return;
@@ -487,7 +513,7 @@ function addExercisePrompt() {
   exSh.getRange(newRow, 1, 1, 4).setValues([[name, type, muscle, equip]]);
   exSh.getRange(newRow, 1, 1, 5).setBackground(newRow % 2 === 0 ? CLR.white : CLR.row2);
   exSh.getRange(newRow, 2)
-    .setBackground(type === 'Push' ? CLR.push : type === 'Pull' ? CLR.pull : CLR.legs)
+    .setBackground(_typeColor(type))
     .setFontWeight('bold').setHorizontalAlignment('center');
 
   _refreshExerciseDropdowns(ss, exSh);
